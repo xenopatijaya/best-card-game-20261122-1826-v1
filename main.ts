@@ -50,9 +50,19 @@ async function copyTree(srcDir, destDir) {
   return files.length;
 }
 
+// Empty a directory without removing the directory itself: the grader
+// runs as an unprivileged user with /output owned by root, so removing
+// the directory would fail with EPERM even though its contents are
+// writable. Only the entries inside are removed, one by one.
+async function clearDir(dir) {
+  await mkdir(dir, { recursive: true });
+  for (const entry of await readdir(dir)) {
+    await rm(join(dir, entry), { recursive: true, force: true });
+  }
+}
+
 async function main() {
-  await rm(outputDir, { recursive: true, force: true });
-  await mkdir(outputDir, { recursive: true });
+  await clearDir(outputDir);
 
   const gameOut = join(outputDir, "game");
   const shotsOut = join(outputDir, "screenshots");
